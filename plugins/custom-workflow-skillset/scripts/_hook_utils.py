@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import datetime as _dt
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+
+def load_event() -> dict:
+    raw = sys.stdin.read()
+    if not raw.strip():
+        return {}
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def emit(obj: dict) -> None:
+    sys.stdout.write(json.dumps(obj, ensure_ascii=False))
+
+
+def emit_context(event_name: str, text: str) -> None:
+    if text.strip():
+        emit({"hookSpecificOutput": {"hookEventName": event_name, "additionalContext": text}})
+
+
+def no_stop_output() -> None:
+    emit({"continue": True})
+
+
+def cwd_path(event: dict) -> Path:
+    return Path(event.get("cwd") or os.getcwd()).expanduser().resolve()
+
+
+def tool_input(event: dict) -> dict:
+    value = event.get("tool_input") or {}
+    return value if isinstance(value, dict) else {}
+
+
+def command_text(event: dict) -> str:
+    parts = []
+    ti = tool_input(event)
+    for key in ("command", "cmd", "script", "input", "description", "reason"):
+        value = event.get(key)
+        if isinstance(value, str) and value:
+            parts.append(value)
+    for key in ("command", "cmd", "script", "input"):
+        value = ti.get(key)
+        if isinstance(value, str):
+            parts.append(value)
+    for key in ("request", "permission_request", "approval_request"):
+        value = event.get(key)
+        if isinstance(value, dict):
+            for nested_key in ("command", "cmd", "description", "reason", "message"):
+                nested_value = value.get(nested_key)
+                if isinstance(nested_value, str) and nested_value:
+                    parts.append(nested_value)
+        elif isinstance(value, str) and value:
+            parts.append(value)
+    if parts:
+        return "\n".join(parts)
+    if ti:
+        return json.dumps(ti, ensure_ascii=False, sort_keys=True)
+    return json.dumps(event, ensure_ascii=False, sort_keys=True)
+
+
+def response_text(event: dict) -> str:
+    value = event.get("tool_response")
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        parts = []
+        for key in ("stdout", "stderr", "output", "message", "error"):
+            item = value.get(key)
+            if isinstance(item, str) and item:
+                parts.append(f"{key}: {item}")
+        if parts:
+            return "\n".join(parts)
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    if value is None:
+        return ""
+    return str(value)
+
+
+def exit_code(event: dict):
+    value = event.get("tool_response")
+    if isinstance(value, dict):
+        for key in ("exit_code", "exitCode", "status", "returncode"):
+            if key in value:
+                return value[key]
+    return None
+
+
+def find_handoff_dir(cwd: Path) -> Path | None:
+    for base in [cwd, *cwd.parents]:
+        for name in ("agent-handoffs", "docs/agent-handoffs"):
+            candidate = base / name
+            if candidate.is_dir():
+                return candidate
+        if base == base.parent:
+            break
+    return None
+
+
+def latest_file(cwd: Path, suffix: str) -> Path | None:
+    handoffs = find_handoff_dir(cwd)
+    if not handoffs:
+        return None
+    files = list(handoffs.glob(f"*{suffix}"))
+    if not files:
+        return None
+    return max(files, key=lambda p: p.stat().st_mtime)
+
+
+def read_tail(path: Path, max_chars: int = 4000) -> str:
+    try:
+        text = path.read_text(errors="replace")
+    except OSError:
+        return ""
+    return text[-max_chars:]
+
+
+def rel(path: Path, cwd: Path) -> str:
+    try:
+        return str(path.relative_to(cwd))
+    except ValueError:
+        return str(path)
+
+
+def snippet(text: str, limit: int = 1800) -> str:
+    clean = re.sub(r"\n{3,}", "\n\n", text.strip())
+    if len(clean) <= limit:
+        return clean
+    return clean[:limit] + "\n...[truncated]"
+
+
+def now_iso() -> str:
+    return _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat()
+
+
+SEVERE_COMMAND_PATTERNS = [
+    (r"\bgit\s+reset\s+--hard\b", "git reset --hard is destructive."),
+    (r"\bgit\s+clean\s+-[^\n;]*[fdx][^\n;]*\b", "git clean with force/delete flags is destructive."),
+    (r"\brm\s+-[^\n;]*r[^\n;]*f[^\n;]*(/|\$HOME|~|\.)\b", "broad recursive force delete is destructive."),
+    (r"\bchmod\s+-R\s+777\b", "recursive chmod 777 is unsafe."),
+    (r"\bchown\s+-R\b", "recursive chown is high-impact."),
+    (r"\bdd\s+.*\bof=/dev/", "writing directly to block devices is destructive."),
+    (r"\bdiskutil\s+(erase|partition|apfs\s+delete)\b", "disk erase/partition commands are destructive."),
+    (r"\b(drop\s+database|drop\s+schema|truncate\s+table)\b", "destructive database operation."),
+]
+
+BOUNDARY_COMMAND_PATTERNS = [
+    (r"\b(npm|pnpm|yarn|bun)\s+(install|add|remove|update|upgrade)\b", "dependency change"),
+    (r"\b(pip|pip3|uv|poetry|pipenv)\s+(install|add|remove|sync|lock)\b", "Python dependency change"),
+    (r"\b(brew|apt|apt-get|dnf|yum)\s+install\b", "system dependency installation"),
+    (r"\b(prisma|sequelize|typeorm|rails|alembic|django-admin|manage\.py)\s+.*\b(migrate|migration)\b", "schema migration"),
+    (r"\b(curl|wget)\s+.*\|\s*(sh|bash|python|python3)\b", "network-fetched script execution"),
+]
+
+VERIFICATION_COMMAND_PATTERNS = [
+    r"\b(test|pytest|vitest|jest|mocha|rspec|go\s+test|cargo\s+test|mvn\s+test|gradle\s+test)\b",
+    r"\b(lint|eslint|ruff|flake8|clippy|rubocop)\b",
+    r"\b(typecheck|tsc|mypy|pyright|sorbet)\b",
+    r"\b(build|cargo\s+build|go\s+build|npm\s+run\s+build|pnpm\s+build|yarn\s+build)\b",
+]
+
+
+def first_match(patterns, command: str):
+    for pattern, reason in patterns:
+        if re.search(pattern, command, re.IGNORECASE):
+            return reason
+    return None
+
+
+def severe_command_reason(command: str) -> str | None:
+    return first_match(SEVERE_COMMAND_PATTERNS, command)
+
+
+def boundary_command_reason(command: str) -> str | None:
+    return first_match(BOUNDARY_COMMAND_PATTERNS, command)
+
+
+def is_verification_command(command: str) -> bool:
+    return any(re.search(pattern, command, re.IGNORECASE) for pattern in VERIFICATION_COMMAND_PATTERNS)
+
+
+def strict_mode() -> bool:
+    return os.environ.get("CUSTOM_WORKFLOW_HOOKS_STRICT", "").lower() in {"1", "true", "yes", "on"}

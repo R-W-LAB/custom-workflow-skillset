@@ -1,0 +1,45 @@
+{
+  "name": "custom-workflow-skillset",
+  "version": "0.3.8",
+  "description": "Codex-native autonomous long-goal workflow with bounded agents, lifecycle hooks, deterministic validators, Superpowers autonomy routing, and live status boards.",
+  "author": {
+    "name": "Julirsia",
+    "url": "https://github.com/Julirsia"
+  },
+  "homepage": "https://github.com/Julirsia/custom-workflow-skillset",
+  "repository": "https://github.com/Julirsia/custom-workflow-skillset",
+  "license": "UNLICENSED",
+  "keywords": [
+    "codex",
+    "goal",
+    "planning",
+    "hooks",
+    "subagents",
+    "verification",
+    "superpowers"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Custom Workflow Skillset",
+    "shortDescription": "Long-goal planning and verification harness for Codex",
+    "longDescription": "Adds skills and lifecycle hooks for approval-free Codex /goal execution, requirements clarification, Superpowers process-skill routing with autonomy override, execution package validation, Codex-readable live status boards, bounded parallel lanes, progress logs, verification evidence, and reviewer gates.",
+    "developerName": "Local Codex User",
+    "category": "Coding",
+    "websiteURL": "https://github.com/Julirsia/custom-workflow-skillset",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Prepare a long /goal execution package.",
+      "Interview me before planning this ambiguous change.",
+      "Classify this plan for safe parallel lanes."
+    ],
+    "brandColor": "#2563EB",
+    "composerIcon": "./assets/harness.svg",
+    "logo": "./assets/harness.svg",
+    "screenshots": []
+  }
+}

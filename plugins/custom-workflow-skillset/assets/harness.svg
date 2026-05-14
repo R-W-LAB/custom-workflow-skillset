@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Custom workflow skillset">
+  <rect width="256" height="256" rx="48" fill="#2563eb"/>
+  <path d="M64 78h128v28H64zM64 114h82v28H64zM64 150h128v28H64z" fill="#ffffff"/>
+  <circle cx="180" cy="128" r="18" fill="#14b8a6"/>
+  <path d="M176 126l-16-16 10-10 26 26-34 34-10-10z" fill="#ffffff"/>
+</svg>

@@ -1,0 +1,20 @@
+{
+  "name": "custom-workflow-skillset",
+  "interface": {
+    "displayName": "Custom Workflow Skillset"
+  },
+  "plugins": [
+    {
+      "name": "custom-workflow-skillset",
+      "source": {
+        "source": "local",
+        "path": "./plugins/custom-workflow-skillset"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    }
+  ]
+}
