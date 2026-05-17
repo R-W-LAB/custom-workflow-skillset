@@ -29,6 +29,7 @@ scripts/session_start_long_goal_context.py
 scripts/status_board.py
 scripts/stop_goal_incomplete_guard.py
 scripts/sync_user_install.py
+scripts/test_deep_interview_contract.py
 scripts/user_prompt_submit_goal_classifier.py
 scripts/validate_execution_package.py
 scripts/watch_status.py

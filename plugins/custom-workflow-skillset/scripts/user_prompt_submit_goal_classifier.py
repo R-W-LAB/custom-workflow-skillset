@@ -12,11 +12,22 @@ CRITERIA = [
     r"\b(build|implement|fix|add|rewrite|modernize|orchestrate)\b",
 ]
 
+DEEP_INTERVIEW_PATTERNS = [
+    r"\$deep[- ]?interview\b",
+    r"\bdeep[- ]?interview\b",
+    r"딥\s*인터뷰|딥인터뷰",
+    r"\binterview me\b",
+    r"\bclarif(?:y|ication)\b",
+]
+
 
 def main() -> None:
     event = load_event()
     prompt = event.get("prompt") or ""
     if not isinstance(prompt, str) or not prompt.strip():
+        return
+
+    if any(re.search(pattern, prompt, re.IGNORECASE) for pattern in DEEP_INTERVIEW_PATTERNS):
         return
 
     score = sum(1 for pattern in CRITERIA if re.search(pattern, prompt, re.IGNORECASE))

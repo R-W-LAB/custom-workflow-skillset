@@ -17,6 +17,12 @@ Produce `agent-handoffs/<slug>-requirements.md` that is ready for planning. Do n
 
 Runtime handoffs must be written outside `.codex/` and `.agents/` so Codex can update related execution/progress files under normal workspace-write sandboxing.
 
+## Interview Isolation
+
+Deep-interview owns requirements clarification only. Do not call `create_goal`, do not start `/goal`, and do not route to `plan-goal-runner` while the interview is still active, even when the request would otherwise meet serious-plan criteria.
+
+Write the requirements handoff first. Move to planning or goal setup only after the requirements handoff is written and the user explicitly chooses that next step.
+
 ## Workflow
 
 1. Create or choose a short task slug.
@@ -24,7 +30,9 @@ Runtime handoffs must be written outside `.codex/` and `.agents/` so Codex can u
 3. Ask only questions that cannot be answered from the repo or provided context.
 4. Ask one question at a time.
 5. Use choice-assisted questions by default:
-   - Give 2-3 recommended answer options when useful, plus an explicit "Other / custom answer" path.
+   - Use the Plan mode adapter when `request_user_input` is available.
+   - Otherwise, use the Markdown fallback format below.
+   - Give 2-3 recommended answer options when useful.
    - Mark the safest/default recommendation when there is a clear best option.
    - Keep each option short and decision-oriented, not a long essay.
    - Explain the tradeoff in one line when the options materially affect scope, risk, or implementation cost.
@@ -44,7 +52,20 @@ Runtime handoffs must be written outside `.codex/` and `.agents/` so Codex can u
 
 ## Choice-Assisted Question Format
 
-Default question style:
+### Plan mode adapter
+
+If `request_user_input` is available, use it instead of Markdown options for choice-assisted interview questions:
+
+- Ask exactly one question per call.
+- Provide 2-3 mutually exclusive options.
+- Put the recommended option first and suffix its label with `(Recommended)`.
+- Keep option labels to 1-5 words and descriptions to one short sentence about impact or tradeoff.
+- Do not include an `Other` option manually; the Plan mode client adds a free-form Other path automatically.
+- After the user answers, normalize the selected or free-form answer into the Decision Log.
+
+### Markdown fallback
+
+Use this format when `request_user_input` is unavailable:
 
 ```md
 Question <n>: <one clear decision question>
