@@ -1,0 +1,36 @@
+{
+  "name": "custom-workflow-skillset",
+  "metadata": {
+    "description": "Codex-first workflow plugin marketplace with Claude Code skill compatibility."
+  },
+  "owner": {
+    "name": "R-W-LAB"
+  },
+  "plugins": [
+    {
+      "name": "custom-workflow-skillset",
+      "source": "./plugins/custom-workflow-skillset",
+      "description": "Long-goal workflow skills for requirements interviews, execution planning, and bounded parallel lanes.",
+      "version": "0.3.10",
+      "author": {
+        "name": "Julirsia"
+      },
+      "homepage": "https://github.com/R-W-LAB/custom-workflow-skillset",
+      "repository": "https://github.com/R-W-LAB/custom-workflow-skillset",
+      "license": "UNLICENSED",
+      "keywords": [
+        "codex",
+        "claude-code",
+        "planning",
+        "requirements",
+        "verification"
+      ],
+      "category": "productivity",
+      "tags": [
+        "workflow",
+        "skills",
+        "planning"
+      ]
+    }
+  ]
+}

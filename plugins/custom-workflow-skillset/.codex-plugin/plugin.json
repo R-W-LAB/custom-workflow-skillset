@@ -1,6 +1,6 @@
 {
   "name": "custom-workflow-skillset",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "description": "Codex-native autonomous long-goal workflow with bounded agents, lifecycle hooks, deterministic validators, Superpowers autonomy routing, and live status boards.",
   "author": {
     "name": "Julirsia",
@@ -11,6 +11,7 @@
   "license": "UNLICENSED",
   "keywords": [
     "codex",
+    "claude-code",
     "goal",
     "planning",
     "hooks",

@@ -1,0 +1,22 @@
+{
+  "name": "custom-workflow-skillset",
+  "version": "0.3.10",
+  "description": "Long-goal workflow skills for requirements interviews, execution planning, and bounded parallel lanes.",
+  "author": {
+    "name": "Julirsia",
+    "url": "https://github.com/Julirsia"
+  },
+  "homepage": "https://github.com/R-W-LAB/custom-workflow-skillset",
+  "repository": "https://github.com/R-W-LAB/custom-workflow-skillset",
+  "license": "UNLICENSED",
+  "keywords": [
+    "codex",
+    "claude-code",
+    "planning",
+    "requirements",
+    "verification"
+  ],
+  "skills": "./skills/",
+  "agents": [],
+  "hooks": []
+}

@@ -5,7 +5,7 @@ approval-free to a verifiable goal while preserving explicit requirements,
 native `/goal` runtime discipline, checkpointed progress, command evidence, and
 bounded subagent review.
 
-Current version: `0.3.8`
+Current version: `0.3.10`
 
 ## Included
 
@@ -14,6 +14,7 @@ Current version: `0.3.8`
 - `skills/parallel-lane-runner/`
 - `agents/*.toml` (15 custom agents)
 - `hooks/hooks.json` Codex lifecycle hooks for autonomous long-goal runs
+- `.claude-plugin/plugin.json` Claude Code manifest exposing the skills only
 - `scripts/*.py` deterministic hook, validation, sync, and packaging helpers
 - `AGENTS.md` optional compact project instruction for the native goal workflow
 - `docs/codex-config-features-excerpt.toml` recommended Codex config excerpt
@@ -30,7 +31,7 @@ Current version: `0.3.8`
 Register the GitHub marketplace:
 
 ```bash
-codex plugin marketplace add Julirsia/custom-workflow-skillset
+codex plugin marketplace add R-W-LAB/custom-workflow-skillset
 ```
 
 Update it later with:
@@ -41,6 +42,20 @@ codex plugin marketplace upgrade custom-workflow-skillset
 
 The GitHub repository is laid out as a Codex marketplace at its root, with this
 plugin copied under `plugins/custom-workflow-skillset/`.
+
+### Claude Code marketplace install
+
+Codex is the primary plugin target. Claude Code can install the same repository
+as a marketplace and use the skill instructions:
+
+```bash
+claude plugin marketplace add R-W-LAB/custom-workflow-skillset
+claude plugin install custom-workflow-skillset@custom-workflow-skillset
+```
+
+Claude Code loads the `skills/` directory. Codex lifecycle hooks and TOML
+subagents stay Codex-only because their runtime contracts and output schemas are
+not Claude Code components.
 
 ### User-wide plugin package
 
