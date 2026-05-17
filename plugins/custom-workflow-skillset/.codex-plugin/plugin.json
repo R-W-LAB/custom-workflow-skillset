@@ -6,8 +6,8 @@
     "name": "Julirsia",
     "url": "https://github.com/Julirsia"
   },
-  "homepage": "https://github.com/Julirsia/custom-workflow-skillset",
-  "repository": "https://github.com/Julirsia/custom-workflow-skillset",
+  "homepage": "https://github.com/R-W-LAB/custom-workflow-skillset",
+  "repository": "https://github.com/R-W-LAB/custom-workflow-skillset",
   "license": "UNLICENSED",
   "keywords": [
     "codex",
@@ -26,7 +26,7 @@
     "longDescription": "Adds skills and lifecycle hooks for approval-free Codex /goal execution, requirements clarification, Superpowers process-skill routing with autonomy override, execution package validation, Codex-readable live status boards, bounded parallel lanes, progress logs, verification evidence, and reviewer gates.",
     "developerName": "Local Codex User",
     "category": "Coding",
-    "websiteURL": "https://github.com/Julirsia/custom-workflow-skillset",
+    "websiteURL": "https://github.com/R-W-LAB/custom-workflow-skillset",
     "capabilities": [
       "Interactive",
       "Read",
