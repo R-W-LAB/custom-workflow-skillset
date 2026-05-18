@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import json
+import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -9,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CLASSIFIER = ROOT / "scripts" / "user_prompt_submit_goal_classifier.py"
 DEEP_INTERVIEW_SKILL = ROOT / "skills" / "deep-interview" / "SKILL.md"
+HOOKS = ROOT / "hooks" / "hooks.json"
 
 
 def run_classifier(prompt: str) -> str:
@@ -61,6 +64,39 @@ class DeepInterviewContractTest(unittest.TestCase):
         self.assertIn("do not start `/goal`", text)
         self.assertIn("do not route to `plan-goal-runner`", text)
         self.assertIn("only after the requirements handoff is written", text)
+
+    def test_hook_commands_resolve_from_plugin_root_not_project_cwd(self) -> None:
+        hooks = json.loads(HOOKS.read_text(encoding="utf-8"))["hooks"]
+        payloads = {
+            "SessionStart": {"cwd": ""},
+            "UserPromptSubmit": {"prompt": "small prompt"},
+            "PreToolUse": {"tool_input": {"command": "echo ok"}},
+            "PermissionRequest": {"tool_input": {"command": "echo ok"}},
+            "PostToolUse": {"tool_input": {"command": "python3 -m unittest"}, "tool_response": {"stdout": "OK", "exit_code": 0}},
+            "Stop": {"last_assistant_message": "complete"},
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            foreign_cwd = Path(tmp)
+            env = os.environ.copy()
+            env["CLAUDE_PLUGIN_ROOT"] = str(ROOT)
+
+            for event_name, entries in hooks.items():
+                with self.subTest(event=event_name):
+                    command = entries[0]["hooks"][0]["command"]
+                    self.assertIn("${CLAUDE_PLUGIN_ROOT}/scripts/", command)
+                    self.assertNotIn("./scripts/", command)
+                    result = subprocess.run(
+                        command,
+                        input=json.dumps({**payloads[event_name], "cwd": str(foreign_cwd)}),
+                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        cwd=foreign_cwd,
+                        env=env,
+                        shell=True,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == "__main__":
