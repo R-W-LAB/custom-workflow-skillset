@@ -20,6 +20,23 @@ DEEP_INTERVIEW_PATTERNS = [
     r"\bclarif(?:y|ication)\b",
 ]
 
+DESIGN_GRILL_PATTERNS = [
+    r"\$design[- ]?grill\b",
+    r"\$grill[- ]?with[- ]?docs\b",
+    r"\bgrill me\b",
+    r"\bdesign[- ]?grill\b",
+    r"\bgrill[- ]?with[- ]?docs\b",
+    r"\bstress[- ]?test\b",
+    r"\bdesign critique\b",
+    r"\bdesign interview\b",
+    r"\bpressure[- ]?test\b",
+    r"설계\s*검토",
+    r"압박\s*면접",
+    r"도메인\s*모델",
+    r"\b(?:CONTEXT\.md|ADR)\b.*\b(?:grill|critique|review|stress[- ]?test|clarif(?:y|ication)|design)\b",
+    r"\b(?:grill|critique|review|stress[- ]?test|clarif(?:y|ication)|design)\b.*\b(?:CONTEXT\.md|ADR)\b",
+]
+
 
 def main() -> None:
     event = load_event()
@@ -28,6 +45,9 @@ def main() -> None:
         return
 
     if any(re.search(pattern, prompt, re.IGNORECASE) for pattern in DEEP_INTERVIEW_PATTERNS):
+        return
+
+    if any(re.search(pattern, prompt, re.IGNORECASE) for pattern in DESIGN_GRILL_PATTERNS):
         return
 
     score = sum(1 for pattern in CRITERIA if re.search(pattern, prompt, re.IGNORECASE))

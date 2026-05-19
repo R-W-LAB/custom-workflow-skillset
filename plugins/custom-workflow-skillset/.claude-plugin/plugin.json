@@ -1,7 +1,7 @@
 {
   "name": "custom-workflow-skillset",
-  "version": "0.3.10",
-  "description": "Long-goal workflow skills for requirements interviews, execution planning, and bounded parallel lanes.",
+  "version": "0.3.11",
+  "description": "Workflow skills for design grilling, requirements interviews, execution planning, and bounded parallel lanes.",
   "author": {
     "name": "Julirsia",
     "url": "https://github.com/Julirsia"
@@ -12,7 +12,9 @@
   "keywords": [
     "codex",
     "claude-code",
+    "design",
     "planning",
+    "docs",
     "requirements",
     "verification"
   ],

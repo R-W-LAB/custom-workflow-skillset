@@ -5,10 +5,12 @@ approval-free to a verifiable goal while preserving explicit requirements,
 native `/goal` runtime discipline, checkpointed progress, command evidence, and
 bounded subagent review.
 
-Current version: `0.3.10`
+Current version: `0.3.11`
 
 ## Included
 
+- `skills/design-grill/`
+- `skills/design-grill-with-docs/`
 - `skills/deep-interview/`
 - `skills/plan-goal-runner/`
 - `skills/parallel-lane-runner/`
@@ -164,7 +166,9 @@ that can interrupt long `/goal` runs.
 
 This workflow is intentionally opt-in and heavyweight:
 
-- `deep-interview` for ambiguous requirements and requirement handoff generation.
+- `design-grill` for broad product, architecture, workflow, or domain design stress testing before requirements.
+- `design-grill-with-docs` for design grilling against `CONTEXT.md`, ADRs, existing domain language, and code facts.
+- `deep-interview` for ambiguous implementation requirements and requirement handoff generation.
 - `plan-goal-runner` for serious implementation planning, review gate, and native `/goal` command generation.
 - `parallel-lane-runner` only for independent bounded lanes with low conflict risk.
 - When Superpowers is installed, this plugin actively routes to relevant `Superpowers:*` skills for TDD, debugging, plan writing, review, verification, worktree isolation, and subagent-driven execution.

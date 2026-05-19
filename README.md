@@ -2,7 +2,8 @@
 
 Git-backed Codex plugin marketplace for `custom-workflow-skillset`.
 Codex remains the primary plugin format; the repository also includes Claude
-Code marketplace metadata for users who want the same skills there.
+Code marketplace metadata for users who want the same design, requirements, and
+execution-planning skills there.
 
 ## Install
 
@@ -27,8 +28,9 @@ claude plugin marketplace add R-W-LAB/custom-workflow-skillset
 claude plugin install custom-workflow-skillset@custom-workflow-skillset
 ```
 
-The Claude manifest exposes the workflow skills under `skills/`. Codex-specific
-hooks and TOML subagents remain packaged for Codex and are not enabled as Claude
+The Claude manifest exposes the workflow skills under `skills/`, including
+design grilling and documentation-aware design review. Codex-specific hooks and
+TOML subagents remain packaged for Codex and are not enabled as Claude
 components.
 
 ## Layout

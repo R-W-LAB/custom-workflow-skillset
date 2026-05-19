@@ -36,6 +36,12 @@ scripts/validate_execution_package.py
 scripts/watch_status.py
 skills/deep-interview/SKILL.md
 skills/deep-interview/templates/requirements-handoff.md
+skills/design-grill-with-docs/SKILL.md
+skills/design-grill-with-docs/references/ADR-FORMAT.md
+skills/design-grill-with-docs/references/CONTEXT-FORMAT.md
+skills/design-grill-with-docs/templates/design-grill-with-docs-handoff.md
+skills/design-grill/SKILL.md
+skills/design-grill/templates/design-grill-handoff.md
 skills/parallel-lane-runner/SKILL.md
 skills/plan-goal-runner/SKILL.md
 skills/plan-goal-runner/references/superpowers-routing.md
