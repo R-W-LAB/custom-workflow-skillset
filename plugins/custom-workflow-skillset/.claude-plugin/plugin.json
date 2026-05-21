@@ -1,6 +1,6 @@
 {
   "name": "custom-workflow-skillset",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "Workflow skills for design grilling, requirements interviews, execution planning, and bounded parallel lanes.",
   "author": {
     "name": "Julirsia",

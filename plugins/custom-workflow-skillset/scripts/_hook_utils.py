@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import sys
 import tempfile
 from pathlib import Path
@@ -266,6 +267,8 @@ SEVERE_COMMAND_PATTERNS = [
     (r"\bgit\s+reset\s+--hard\b", "git reset --hard is destructive."),
     (r"\bgit\s+clean\s+-[^\n;]*[fdx][^\n;]*\b", "git clean with force/delete flags is destructive."),
     (r"\brm\s+-[^\n;]*r[^\n;]*f[^\n;]*(/|\$HOME|~|\.)\b", "broad recursive force delete is destructive."),
+    (r"\bshutil\.rmtree\s*\(", "programmatic recursive delete is destructive."),
+    (r"\bfs\.rm(?:Sync)?\s*\([^;\n]*recursive\s*:\s*true", "programmatic recursive delete is destructive."),
     (r"\bchmod\s+-R\s+777\b", "recursive chmod 777 is unsafe."),
     (r"\bchown\s+-R\b", "recursive chown is high-impact."),
     (r"\bdd\s+.*\bof=/dev/", "writing directly to block devices is destructive."),
@@ -296,8 +299,91 @@ def first_match(patterns, command: str):
     return None
 
 
+def _shell_tokens(command: str) -> list[str]:
+    normalized = re.sub(r"(;|&&|\|\|)", " ", command)
+    try:
+        return shlex.split(normalized)
+    except ValueError:
+        return []
+
+
+def _command_name(token: str) -> str:
+    return Path(token).name
+
+
+def _broad_delete_target(target: str) -> bool:
+    return target in {
+        "*",
+        ".",
+        "./",
+        "./*",
+        "..",
+        "../",
+        "../*",
+        "/",
+        "/*",
+        "~",
+        "~/",
+        "~/*",
+        "$HOME",
+        "$HOME/",
+        "$HOME/*",
+        "${HOME}",
+        "${HOME}/",
+        "${HOME}/*",
+    }
+
+
+def _rm_recursive_force_reason(tokens: list[str]) -> str | None:
+    for index, token in enumerate(tokens):
+        if _command_name(token) != "rm":
+            continue
+        flags = set()
+        targets = []
+        after_options = False
+        for arg in tokens[index + 1 :]:
+            if arg == "--":
+                after_options = True
+                continue
+            if not after_options and arg.startswith("-") and arg != "-":
+                if arg == "--recursive":
+                    flags.add("r")
+                elif arg == "--force":
+                    flags.add("f")
+                elif not arg.startswith("--"):
+                    flags.update(arg.lstrip("-"))
+                continue
+            targets.append(arg)
+        if {"r", "f"}.issubset(flags) and any(_broad_delete_target(target) for target in targets):
+            return "broad recursive force delete is destructive."
+    return None
+
+
+def _find_delete_reason(tokens: list[str]) -> str | None:
+    for index, token in enumerate(tokens):
+        if _command_name(token) != "find":
+            continue
+        args = tokens[index + 1 :]
+        if "-delete" not in args:
+            continue
+        roots = []
+        for arg in args:
+            if arg.startswith("-"):
+                break
+            roots.append(arg)
+        if not roots:
+            roots = ["."]
+        if any(_broad_delete_target(root) for root in roots):
+            return "broad find -delete is destructive."
+    return None
+
+
 def severe_command_reason(command: str) -> str | None:
-    return first_match(SEVERE_COMMAND_PATTERNS, command)
+    reason = first_match(SEVERE_COMMAND_PATTERNS, command)
+    if reason:
+        return reason
+    tokens = _shell_tokens(command)
+    return _rm_recursive_force_reason(tokens) or _find_delete_reason(tokens)
 
 
 def boundary_command_reason(command: str) -> str | None:

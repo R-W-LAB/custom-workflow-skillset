@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from typing import Optional, Tuple
 
-from _hook_utils import active_handoff_paths, command_text, cwd_path, emit_context, env_flag, env_int, exit_code, include_tool_output_context, is_verification_command, latest_file, load_event, now_iso, rel, response_text, snippet
+from _hook_utils import active_handoff_paths, command_text, cwd_path, emit_context, env_flag, env_int, exit_code, find_handoff_dir, include_tool_output_context, is_verification_command, latest_file, load_event, now_iso, rel, response_text, snippet
 
 
 def derived_evidence_file(cwd):
@@ -10,6 +11,26 @@ def derived_evidence_file(cwd):
     if isinstance(evidence_path, Path):
         return evidence_path
     return latest_file(cwd, "-verification.md")
+
+
+def safe_evidence_file(cwd: Path, evidence: Optional[Path]) -> Tuple[Optional[Path], Optional[str]]:
+    if not evidence:
+        return None, "no evidence path found"
+    handoffs = find_handoff_dir(cwd)
+    if not handoffs:
+        return None, "no handoff directory found"
+    if evidence.is_symlink():
+        return None, f"Unsafe evidence path rejected: `{rel(evidence, cwd)}` is a symlink."
+    try:
+        cwd_resolved = cwd.resolve()
+        handoffs_resolved = handoffs.resolve()
+        parent_resolved = evidence.parent.resolve()
+        evidence_resolved = evidence.resolve() if evidence.exists() else parent_resolved / evidence.name
+        handoffs_resolved.relative_to(cwd_resolved)
+        evidence_resolved.relative_to(handoffs_resolved)
+    except (OSError, ValueError):
+        return None, f"Unsafe evidence path rejected: `{rel(evidence, cwd)}` is outside the active handoff directory."
+    return evidence, None
 
 
 def summarize_output(output: str, code) -> str:
@@ -31,7 +52,7 @@ def main() -> None:
     cwd = cwd_path(event)
     code = exit_code(event)
     output = summarize_output(response_text(event), code)
-    evidence = derived_evidence_file(cwd)
+    evidence, unsafe_reason = safe_evidence_file(cwd, derived_evidence_file(cwd))
     block = (
         f"\n## Hook Evidence - {now_iso()}\n\n"
         f"Command: `{command}`\n\n"
@@ -41,6 +62,10 @@ def main() -> None:
         f"{output}\n"
         "```\n"
     )
+
+    if unsafe_reason and unsafe_reason != "no evidence path found":
+        emit_context("PostToolUse", unsafe_reason)
+        return
 
     if evidence and (evidence.exists() or env_flag("CUSTOM_WORKFLOW_EVIDENCE_AUTO_CREATE", True)):
         try:

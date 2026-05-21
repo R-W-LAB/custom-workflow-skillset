@@ -5,7 +5,7 @@ approval-free to a verifiable goal while preserving explicit requirements,
 native `/goal` runtime discipline, checkpointed progress, command evidence, and
 bounded subagent review.
 
-Current version: `0.3.13`
+Current version: `0.3.14`
 
 ## Included
 

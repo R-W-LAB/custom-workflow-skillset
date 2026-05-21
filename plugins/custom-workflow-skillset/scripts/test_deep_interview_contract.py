@@ -273,6 +273,29 @@ class TokenEfficiencyContractTest(unittest.TestCase):
             self.assertIn("alpha evidence", alpha_evidence.read_text(encoding="utf-8"))
             self.assertNotIn("alpha evidence", beta_evidence.read_text(encoding="utf-8"))
 
+    def test_post_tool_use_rejects_symlink_evidence_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cwd = root / "repo"
+            handoffs = cwd / "agent-handoffs"
+            handoffs.mkdir(parents=True)
+            outside = root / "outside.txt"
+            outside.write_text("before\n", encoding="utf-8")
+            (handoffs / "escape-status.md").write_text("State: RUNNING\n", encoding="utf-8")
+            os.symlink(outside, handoffs / "escape-verification.md")
+
+            output = run_script(
+                POST_TOOL_USE,
+                {
+                    "cwd": str(cwd),
+                    "tool_input": {"command": "pytest tests"},
+                    "tool_response": {"stdout": "escape payload", "exit_code": 0},
+                },
+            )
+
+            self.assertIn("Unsafe evidence path", output)
+            self.assertEqual(outside.read_text(encoding="utf-8"), "before\n")
+
     def test_permission_request_quiet_allow_outputs_no_system_message(self) -> None:
         output = run_script(
             PERMISSION_POLICY,
@@ -305,6 +328,22 @@ class TokenEfficiencyContractTest(unittest.TestCase):
         self.assertIn("systemMessage", first)
         self.assertIn("systemMessage", second)
         self.assertEqual(third, "")
+
+    def test_pre_tool_use_denies_destructive_command_variants(self) -> None:
+        commands = [
+            "rm -rf *",
+            "rm -fr .",
+            "find . -delete",
+            "python -c \"import shutil; shutil.rmtree('build')\"",
+        ]
+
+        for command in commands:
+            with self.subTest(command=command):
+                output = run_script(PRE_TOOL_USE, {"tool_input": {"command": command}})
+                data = json.loads(output)
+                hook = data["hookSpecificOutput"]
+                self.assertEqual(hook["permissionDecision"], "deny")
+                self.assertIn("destructive", hook["permissionDecisionReason"].lower())
 
     def test_session_start_compact_context_under_600_chars_and_once_per_fingerprint(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -502,9 +541,9 @@ integration_reviewer if multi-component: conditional
         claude = json.loads(CLAUDE_PLUGIN_JSON.read_text(encoding="utf-8"))
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-        self.assertEqual(codex["version"], "0.3.13")
+        self.assertEqual(codex["version"], "0.3.14")
         self.assertEqual(claude["version"], codex["version"])
-        self.assertIn("Current version: `0.3.13`", readme)
+        self.assertIn("Current version: `0.3.14`", readme)
         if CLAUDE_MARKETPLACE_JSON.exists():
             marketplace = json.loads(CLAUDE_MARKETPLACE_JSON.read_text(encoding="utf-8"))["plugins"][0]
             self.assertEqual(marketplace["version"], codex["version"])
