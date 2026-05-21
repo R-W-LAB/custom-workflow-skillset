@@ -1,0 +1,29 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  plugin-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run contract tests
+        run: python3 plugins/custom-workflow-skillset/scripts/test_deep_interview_contract.py
+      - name: Validate execution package templates
+        run: |
+          python3 plugins/custom-workflow-skillset/skills/plan-goal-runner/scripts/validate_execution_package.py \
+            --profile compact plugins/custom-workflow-skillset/skills/plan-goal-runner/templates/execution-package.compact.md
+          python3 plugins/custom-workflow-skillset/skills/plan-goal-runner/scripts/validate_execution_package.py \
+            plugins/custom-workflow-skillset/skills/plan-goal-runner/templates/execution-package.md
+      - name: Compile scripts
+        run: python3 -m py_compile plugins/custom-workflow-skillset/scripts/*.py plugins/custom-workflow-skillset/skills/plan-goal-runner/scripts/*.py
+      - name: Package clean zip
+        run: python3 plugins/custom-workflow-skillset/scripts/package_clean_zip.py /tmp/custom-workflow-skillset.zip
+      - name: Verify manifest checksums
+        working-directory: plugins/custom-workflow-skillset
+        run: shasum -a 256 -c MANIFEST.sha256

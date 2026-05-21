@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 
-from _hook_utils import cwd_path, emit_context, env_flag, env_int, fingerprint, first_fingerprint, include_context_tails, latest_file, load_event, read_tail, rel, snippet, token_profile
+from _hook_utils import active_handoff_paths, cwd_path, emit_context, env_flag, env_int, fingerprint, first_fingerprint, include_context_tails, load_event, read_tail, rel, snippet, token_profile
 
 
 def field(text: str, label: str, default: str = "unknown") -> str:
@@ -12,9 +12,10 @@ def field(text: str, label: str, default: str = "unknown") -> str:
 def main() -> None:
     event = load_event()
     cwd = cwd_path(event)
-    status = latest_file(cwd, "-status.md")
-    progress = latest_file(cwd, "-progress.md")
-    package = latest_file(cwd, "-execution-package.md")
+    paths = active_handoff_paths(cwd)
+    status = paths.get("status")
+    progress = paths.get("progress")
+    package = paths.get("package")
     if not progress and not package and not status:
         return
 

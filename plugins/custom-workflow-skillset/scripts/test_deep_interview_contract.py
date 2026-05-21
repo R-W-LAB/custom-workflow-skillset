@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
 CLASSIFIER = ROOT / "scripts" / "user_prompt_submit_goal_classifier.py"
 DEEP_INTERVIEW_SKILL = ROOT / "skills" / "deep-interview" / "SKILL.md"
 DESIGN_GRILL_SKILL = ROOT / "skills" / "design-grill" / "SKILL.md"
@@ -27,18 +28,26 @@ STATUS_BOARD = ROOT / "skills" / "plan-goal-runner" / "scripts" / "status_board.
 VALIDATOR = ROOT / "skills" / "plan-goal-runner" / "scripts" / "validate_execution_package.py"
 SHARED_QUESTION = ROOT / "skills" / "_shared" / "references" / "choice-assisted-question.md"
 TOKEN_CONFIG = ROOT / "docs" / "codex-config-token-efficient.toml"
+CODEX_PLUGIN_JSON = ROOT / ".codex-plugin" / "plugin.json"
+CLAUDE_PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
+CLAUDE_MARKETPLACE_JSON = REPO_ROOT / ".claude-plugin" / "marketplace.json"
+CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "test.yml"
 
 
 def run_classifier(prompt: str) -> str:
-    result = subprocess.run(
-        [sys.executable, str(CLASSIFIER)],
-        input=json.dumps({"prompt": prompt}),
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=ROOT,
-        check=True,
-    )
+    env = os.environ.copy()
+    with tempfile.TemporaryDirectory() as tmp:
+        env["CWS_HOOK_STATE_DIR"] = tmp
+        result = subprocess.run(
+            [sys.executable, str(CLASSIFIER)],
+            input=json.dumps({"prompt": prompt}),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=ROOT,
+            env=env,
+            check=True,
+        )
     return result.stdout
 
 
@@ -57,6 +66,15 @@ def run_script(path: Path, event: dict, *, cwd: Path = ROOT, env: dict[str, str]
         check=True,
     )
     return result.stdout
+
+
+def section(text: str, heading: str) -> str:
+    marker = f"## {heading}"
+    if marker not in text:
+        return ""
+    after = text.split(marker, 1)[1]
+    end = after.find("\n## ", 1)
+    return after if end == -1 else after[:end]
 
 
 class DeepInterviewContractTest(unittest.TestCase):
@@ -145,19 +163,35 @@ class DesignGrillContractTest(unittest.TestCase):
 
 class TokenEfficiencyContractTest(unittest.TestCase):
     def test_classifier_ignores_generic_verbs_but_keeps_serious_signals(self) -> None:
-        ordinary = run_script(CLASSIFIER, {"prompt": "Implement a small button style fix"})
-        serious = run_script(
-            CLASSIFIER,
-            {"prompt": "Implement the auth refactor across multiple files with rollback and verification commands"},
-        )
-        explicit = run_script(
-            CLASSIFIER,
-            {"prompt": "Prepare a long /goal execution package for the auth refactor with verification commands"},
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"CWS_HOOK_STATE_DIR": tmp}
+            ordinary = run_script(CLASSIFIER, {"prompt": "Implement a small button style fix"}, env=env)
+            serious = run_script(
+                CLASSIFIER,
+                {"prompt": "Implement the auth refactor across multiple files with rollback and verification commands"},
+                env=env,
+            )
+            explicit = run_script(
+                CLASSIFIER,
+                {"prompt": "Prepare a long /goal execution package for the auth refactor with verification commands"},
+                env=env,
+            )
 
         self.assertEqual(ordinary, "")
         self.assertIn("$plan-goal-runner", serious)
         self.assertIn("$plan-goal-runner", explicit)
+
+    def test_classifier_suppresses_repeated_prompt_hash(self) -> None:
+        prompt = "Prepare a long /goal execution package for the auth refactor with rollback and verification commands"
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"CWS_HOOK_STATE_DIR": tmp}
+            event = {"cwd": str(ROOT), "prompt": prompt}
+
+            first = run_script(CLASSIFIER, event, env=env)
+            second = run_script(CLASSIFIER, event, env=env)
+
+        self.assertIn("$plan-goal-runner", first)
+        self.assertEqual(second, "")
 
     def test_session_start_minimal_profile_emits_paths_without_tails(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -212,6 +246,33 @@ class TokenEfficiencyContractTest(unittest.TestCase):
             self.assertTrue(evidence.is_file())
             self.assertIn("VERY_LONG_OUTPUT_SENTINEL", evidence_text)
 
+    def test_post_tool_use_prefers_active_status_slug_over_latest_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = Path(tmp)
+            handoffs = cwd / "agent-handoffs"
+            handoffs.mkdir()
+            alpha_status = handoffs / "alpha-status.md"
+            beta_evidence = handoffs / "beta-verification.md"
+            alpha_status.write_text("State: RUNNING\n", encoding="utf-8")
+            beta_evidence.write_text("old beta evidence\n", encoding="utf-8")
+            os.utime(beta_evidence, (300, 300))
+            os.utime(alpha_status, (200, 200))
+
+            output = run_script(
+                POST_TOOL_USE,
+                {
+                    "cwd": str(cwd),
+                    "tool_input": {"command": "pytest tests"},
+                    "tool_response": {"stdout": "alpha evidence", "exit_code": 0},
+                },
+            )
+            alpha_evidence = handoffs / "alpha-verification.md"
+
+            self.assertIn("alpha-verification.md", output)
+            self.assertTrue(alpha_evidence.is_file())
+            self.assertIn("alpha evidence", alpha_evidence.read_text(encoding="utf-8"))
+            self.assertNotIn("alpha evidence", beta_evidence.read_text(encoding="utf-8"))
+
     def test_permission_request_quiet_allow_outputs_no_system_message(self) -> None:
         output = run_script(
             PERMISSION_POLICY,
@@ -233,6 +294,17 @@ class TokenEfficiencyContractTest(unittest.TestCase):
 
         self.assertIn("systemMessage", first)
         self.assertEqual(second, "")
+
+    def test_boundary_warnings_remember_non_consecutive_fingerprints(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"CWS_HOOK_STATE_DIR": tmp, "CUSTOM_WORKFLOW_BOUNDARY_WARN_ONCE": "1"}
+            first = run_script(PRE_TOOL_USE, {"tool_input": {"command": "npm install left-pad"}}, env=env)
+            second = run_script(PRE_TOOL_USE, {"tool_input": {"command": "npm install is-even"}}, env=env)
+            third = run_script(PRE_TOOL_USE, {"tool_input": {"command": "npm install left-pad"}}, env=env)
+
+        self.assertIn("systemMessage", first)
+        self.assertIn("systemMessage", second)
+        self.assertEqual(third, "")
 
     def test_session_start_compact_context_under_600_chars_and_once_per_fingerprint(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -260,6 +332,31 @@ class TokenEfficiencyContractTest(unittest.TestCase):
         self.assertIn("current=CP02 - build", first)
         self.assertNotIn("Next step: continue", first)
         self.assertLess(len(second), len(first))
+
+    def test_session_start_uses_one_active_slug_for_related_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = Path(tmp)
+            handoffs = cwd / "agent-handoffs"
+            handoffs.mkdir()
+            alpha_status = handoffs / "alpha-status.md"
+            alpha_progress = handoffs / "alpha-progress.md"
+            alpha_package = handoffs / "alpha-execution-package.md"
+            beta_progress = handoffs / "beta-progress.md"
+            alpha_status.write_text("State: RUNNING\nCurrent checkpoint: CP01\nNext checkpoint: CP02\n", encoding="utf-8")
+            alpha_progress.write_text("alpha progress\n", encoding="utf-8")
+            alpha_package.write_text("alpha package\n", encoding="utf-8")
+            beta_progress.write_text("beta progress\n", encoding="utf-8")
+            os.utime(beta_progress, (200, 200))
+            os.utime(alpha_progress, (100, 100))
+            os.utime(alpha_package, (100, 100))
+            os.utime(alpha_status, (300, 300))
+
+            output = run_script(SESSION_START, {"cwd": str(cwd)})
+
+        self.assertIn("alpha-status.md", output)
+        self.assertIn("alpha-progress.md", output)
+        self.assertIn("alpha-execution-package.md", output)
+        self.assertNotIn("beta-progress.md", output)
 
     def test_compact_execution_package_passes_validator_profile_compact(self) -> None:
         package = """# Execution Package: Compact
@@ -311,7 +408,7 @@ integration_reviewer if multi-component: conditional
                 text=True,
             )
             subprocess.run(
-                [sys.executable, str(STATUS_BOARD), "update", "sample", "--handoffs-dir", str(handoffs), "--state", "RUNNING", "--current", "CP01", "--next", "CP02", "--event", "started"],
+                [sys.executable, str(STATUS_BOARD), "update", "sample", "--handoffs-dir", str(handoffs), "--state", "RUNNING", "--current", "CP01", "--action", "running tests", "--next", "CP02", "--event", "started"],
                 check=True,
                 stdout=subprocess.PIPE,
                 text=True,
@@ -332,9 +429,31 @@ integration_reviewer if multi-component: conditional
 
         self.assertIn("State: DONE", text)
         self.assertIn("Current checkpoint: CP01", text)
-        self.assertIn("Current action: CP01", text)
+        self.assertIn("Current action: running tests", text)
         self.assertIn("| `pytest` |", text)
         self.assertIn("Outcome: All checks passed", text)
+
+    def test_status_board_recent_events_do_not_copy_stop_condition_bullets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            handoffs = Path(tmp) / "agent-handoffs"
+            subprocess.run(
+                [sys.executable, str(STATUS_BOARD), "sample", "--handoffs-dir", str(handoffs), "--checkpoint", "Build"],
+                check=True,
+                stdout=subprocess.PIPE,
+                text=True,
+            )
+            subprocess.run(
+                [sys.executable, str(STATUS_BOARD), "update", "sample", "--handoffs-dir", str(handoffs), "--event", "started"],
+                check=True,
+                stdout=subprocess.PIPE,
+                text=True,
+            )
+            text = (handoffs / "sample-status.md").read_text(encoding="utf-8")
+
+        recent = section(text, "Recent Events")
+        self.assertIn("started", recent)
+        self.assertNotIn("Hard destructive shell command", recent)
+        self.assertNotIn("Payment/purchase action", recent)
 
     def test_status_board_compact_create_accepts_verify_subcommand(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -377,6 +496,31 @@ integration_reviewer if multi-component: conditional
         self.assertIn("Do not include an `Other` option manually", shared)
         self.assertIn("model_reasoning_effort = \"medium\"", config)
         self.assertIn("max_threads = 2", config)
+
+    def test_plugin_versions_are_consistent_and_bumped(self) -> None:
+        codex = json.loads(CODEX_PLUGIN_JSON.read_text(encoding="utf-8"))
+        claude = json.loads(CLAUDE_PLUGIN_JSON.read_text(encoding="utf-8"))
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        self.assertEqual(codex["version"], "0.3.12")
+        self.assertEqual(claude["version"], codex["version"])
+        self.assertIn("Current version: `0.3.12`", readme)
+        if CLAUDE_MARKETPLACE_JSON.exists():
+            marketplace = json.loads(CLAUDE_MARKETPLACE_JSON.read_text(encoding="utf-8"))["plugins"][0]
+            self.assertEqual(marketplace["version"], codex["version"])
+        elif (REPO_ROOT / ".git").exists():
+            self.fail("Claude marketplace manifest is missing from the repository root")
+
+    def test_ci_workflow_runs_plugin_contract_checks(self) -> None:
+        if not CI_WORKFLOW.exists():
+            if (REPO_ROOT / ".git").exists():
+                self.fail("CI workflow is missing from the repository root")
+            self.skipTest("CI workflow is only packaged at the marketplace repository root")
+        workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("test_deep_interview_contract.py", workflow)
+        self.assertIn("package_clean_zip.py", workflow)
+        self.assertIn("--profile compact", workflow)
 
     def test_sync_user_install_global_skill_copies_are_opt_in(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

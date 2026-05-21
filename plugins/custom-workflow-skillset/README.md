@@ -5,7 +5,7 @@ approval-free to a verifiable goal while preserving explicit requirements,
 native `/goal` runtime discipline, checkpointed progress, command evidence, and
 bounded subagent review.
 
-Current version: `0.3.11`
+Current version: `0.3.12`
 
 ## Included
 
@@ -231,7 +231,7 @@ python3 skills/plan-goal-runner/scripts/status_board.py <slug> \
 Update fields without reopening the full Markdown board:
 
 ```bash
-python3 skills/plan-goal-runner/scripts/status_board.py update <slug> --state RUNNING --current CP02 --next CP03 --event "CP02 started"
+python3 skills/plan-goal-runner/scripts/status_board.py update <slug> --state RUNNING --current "CP02 - validator compact profile" --action "patching validator regex aliases" --next "CP03 - run tests" --event "CP02 started"
 python3 skills/plan-goal-runner/scripts/status_board.py verify <slug> --command "pytest" --exit 0 --status PASS
 python3 skills/plan-goal-runner/scripts/status_board.py done <slug> --state DONE --summary "All checks passed"
 ```
@@ -386,6 +386,7 @@ CUSTOM_WORKFLOW_EVIDENCE_AUTO_CREATE=1
 CUSTOM_WORKFLOW_EVIDENCE_MAX_CHARS=600
 CUSTOM_WORKFLOW_CONTEXT_MAX_CHARS=600
 CUSTOM_WORKFLOW_SESSIONSTART_ONCE_PER_FINGERPRINT=1
+CUSTOM_WORKFLOW_FINGERPRINT_SET_MAX=100
 CUSTOM_WORKFLOW_STOP_MAX_AGE_HOURS=2
 CUSTOM_WORKFLOW_STOP_MAX_CONTINUATIONS=25
 CWS_TOKEN_PROFILE=minimal   # default; use standard or full only for debugging/recovery

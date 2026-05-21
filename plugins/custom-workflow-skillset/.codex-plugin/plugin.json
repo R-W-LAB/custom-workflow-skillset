@@ -1,6 +1,6 @@
 {
   "name": "custom-workflow-skillset",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "description": "Codex-native design grilling, requirements clarification, long-goal execution planning, bounded agents, lifecycle hooks, deterministic validators, and live status boards.",
   "author": {
     "name": "Julirsia",

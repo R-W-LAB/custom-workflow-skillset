@@ -119,6 +119,46 @@ def latest_file(cwd: Path, suffix: str) -> Path | None:
     return max(files, key=lambda p: p.stat().st_mtime)
 
 
+def slug_from_handoff(path: Path, suffix: str) -> str | None:
+    return path.name[: -len(suffix)] if path.name.endswith(suffix) else None
+
+
+def handoff_path_for_slug(cwd: Path, slug: str, suffix: str) -> Path | None:
+    handoffs = find_handoff_dir(cwd)
+    if not handoffs:
+        return None
+    return handoffs / f"{slug}{suffix}"
+
+
+def active_handoff_paths(cwd: Path) -> dict[str, Path | str | None]:
+    source = latest_file(cwd, "-status.md")
+    source_suffix = "-status.md"
+    if not source:
+        for suffix in ("-execution-package.md", "-progress.md", "-verification.md"):
+            source = latest_file(cwd, suffix)
+            source_suffix = suffix
+            if source:
+                break
+    if not source:
+        return {}
+
+    slug = slug_from_handoff(source, source_suffix)
+    if not slug:
+        return {}
+
+    paths: dict[str, Path | str | None] = {"slug": slug}
+    for label, suffix in (
+        ("status", "-status.md"),
+        ("package", "-execution-package.md"),
+        ("progress", "-progress.md"),
+        ("verification", "-verification.md"),
+    ):
+        path = handoff_path_for_slug(cwd, slug, suffix)
+        paths[label] = path if path and path.exists() else None
+        paths[f"{label}_path"] = path
+    return paths
+
+
 def read_tail(path: Path, max_chars: int = 4000) -> str:
     try:
         text = path.read_text(errors="replace")
@@ -203,9 +243,17 @@ def fingerprint(text: str) -> str:
 def first_fingerprint(name: str, key: str, value: str) -> bool:
     state = load_state(name)
     digest = fingerprint(value)
-    if state.get(key) == digest:
+    existing = state.get(key)
+    if isinstance(existing, list):
+        seen = [item for item in existing if isinstance(item, str)]
+    elif isinstance(existing, str):
+        seen = [existing]
+    else:
+        seen = []
+    if digest in seen:
         return False
-    state[key] = digest
+    seen.append(digest)
+    state[key] = seen[-env_int("CUSTOM_WORKFLOW_FINGERPRINT_SET_MAX", 100) :]
     save_state(name, state)
     return True
 

@@ -156,8 +156,9 @@ def append_recent_event(text: str, event: str, keep: int = 5) -> str:
         return text.rstrip() + f"\n\n{marker}\n\n{entry}\n"
     before, after = text.split(marker, 1)
     lines = after.splitlines()
-    kept = [line for line in lines if line.startswith("- ")][: keep - 1]
     rest_start = next((i for i, line in enumerate(lines) if line.startswith("## ") and i > 0), None)
+    event_lines = lines[:rest_start] if rest_start is not None else lines
+    kept = [line for line in event_lines if line.startswith("- ")][: keep - 1]
     rest = "\n".join(lines[rest_start:]) if rest_start is not None else ""
     body = "\n".join([entry, *kept])
     return before.rstrip() + f"\n\n{marker}\n\n{body}\n\n" + rest.rstrip() + "\n"
@@ -191,7 +192,8 @@ def update_board(args) -> int:
         text = replace_line(text, "State: ", args.state)
     if args.current:
         text = replace_line(text, "Current checkpoint: ", args.current)
-        text = replace_line(text, "Current action: ", args.current)
+    if args.action:
+        text = replace_line(text, "Current action: ", args.action)
     if args.next:
         text = replace_line(text, "Next checkpoint: ", args.next)
     if args.blocker:
@@ -253,6 +255,7 @@ def main() -> int:
         if command == "update":
             parser.add_argument("--state")
             parser.add_argument("--current")
+            parser.add_argument("--action")
             parser.add_argument("--next")
             parser.add_argument("--blocker")
             parser.add_argument("--event")

@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-from _hook_utils import command_text, cwd_path, emit_context, env_flag, env_int, exit_code, include_tool_output_context, is_verification_command, latest_file, load_event, now_iso, rel, response_text, snippet
+from _hook_utils import active_handoff_paths, command_text, cwd_path, emit_context, env_flag, env_int, exit_code, include_tool_output_context, is_verification_command, latest_file, load_event, now_iso, rel, response_text, snippet
 
 
 def derived_evidence_file(cwd):
-    evidence = latest_file(cwd, "-verification.md")
-    if evidence:
-        return evidence
-    for suffix in ("-status.md", "-execution-package.md", "-progress.md"):
-        source = latest_file(cwd, suffix)
-        if source:
-            return source.with_name(source.name.replace(suffix, "-verification.md"))
-    return None
+    active = active_handoff_paths(cwd)
+    evidence_path = active.get("verification_path")
+    if isinstance(evidence_path, Path):
+        return evidence_path
+    return latest_file(cwd, "-verification.md")
 
 
 def summarize_output(output: str, code) -> str:

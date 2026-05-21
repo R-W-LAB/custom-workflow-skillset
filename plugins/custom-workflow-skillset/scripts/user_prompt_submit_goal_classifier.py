@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 
-from _hook_utils import emit_context, load_event
+from _hook_utils import cwd_path, emit_context, first_fingerprint, load_event
 
 
 CRITERIA = [
@@ -61,6 +61,8 @@ def main() -> None:
     has_strong_signal = any(re.search(pattern, prompt, re.IGNORECASE) for pattern in STRONG_GOAL_SIGNALS)
     score = sum(1 for pattern in CRITERIA if re.search(pattern, prompt, re.IGNORECASE))
     if score < 3 and not (has_strong_signal and score >= 2):
+        return
+    if not first_fingerprint("prompt-classifier", str(cwd_path(event)), prompt):
         return
 
     emit_context(
