@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from _hook_utils import boundary_command_reason, command_text, emit, load_event, severe_command_reason, strict_mode, tool_input
+from _hook_utils import boundary_command_reason, command_text, emit, env_flag, first_fingerprint, load_event, severe_command_reason, strict_mode, tool_input
 
 
 def allow(message: str | None = None) -> None:
@@ -49,10 +49,16 @@ def main() -> None:
         return
 
     if boundary:
-        allow(f"Custom Workflow Skillset YOLO mode auto-approved this {boundary} request so the active long-goal run can continue. Record the command and result in the progress/evidence log.")
+        message = None
+        if not env_flag("CUSTOM_WORKFLOW_BOUNDARY_WARN_ONCE", True) or first_fingerprint("permission-boundary", boundary, combined):
+            message = f"Allowed boundary: {boundary}. Log if goal-scoped."
+        allow(message)
         return
 
-    allow("Custom Workflow Skillset YOLO mode auto-approved this non-destructive permission request for uninterrupted long-goal execution.")
+    if env_flag("CUSTOM_WORKFLOW_QUIET_ALLOW", True):
+        allow()
+    else:
+        allow("CWS auto-approved non-destructive request.")
 
 
 if __name__ == "__main__":

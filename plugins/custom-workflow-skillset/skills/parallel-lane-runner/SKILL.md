@@ -111,6 +111,11 @@ NEEDS_PARENT_DECISION:
 - recommended next action
 ```
 
+Output budget:
+- Default lane report: 300-500 tokens.
+- Evidence is command + exit/status + file path or short finding, not pasted logs.
+- Read-only evidence lanes return top 5 findings only.
+
 Use follow-up messages to subagents sparingly. Send input only for:
 
 - blocker clarification
@@ -118,6 +123,7 @@ Use follow-up messages to subagents sparingly. Send input only for:
 - lane drift back into assigned scope
 
 Do not use subagent follow-up messages as a general chat loop. If repeated clarification is needed, let the root continue or re-plan from the execution package.
+Do not send more than one follow-up to a lane unless it is `BLOCKED`.
 
 ## Lane Output Contract
 

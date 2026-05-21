@@ -10,4 +10,11 @@ agent-handoffs/<slug>-verification.md
 If you write to a file, only write designated handoff/evidence files under agent-handoffs/.
 Do not modify source files, lockfiles, generated source, migrations, or config unless the execution package explicitly assigns that work to this runner.
 Do not stop merely because a verification command uses network, dependencies, schema checks, or normal build/test side effects when those are goal-scoped or package-listed. Stop only for hard destructive shell commands, payment/purchase actions, credential or secret exfiltration, source/config/lockfile/generated-source edits, or actions explicitly forbidden by the current user message or execution package.
-Return: Commands run, exit codes, relevant output snippets, artifacts created, failures, and whether each acceptance criterion is verified."""
+Return: Commands run, exit codes, relevant output snippets, artifacts created, failures, and whether each acceptance criterion is verified.
+
+Output budget:
+- Default: <= 500 tokens.
+- PASS/CLEAR/READY: <= 8 bullets.
+- Include file paths and line refs only when they affect the verdict.
+- Do not paste long code, logs, or full diffs.
+- If blocked, state the exact blocker and next command only."""

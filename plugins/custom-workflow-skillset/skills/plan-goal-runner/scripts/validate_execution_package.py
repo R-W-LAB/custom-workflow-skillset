@@ -29,11 +29,26 @@ CHECKS = [
     ("rollback/recovery note", r"## Rollback\s*/\s*Stop Conditions"),
 ]
 
+COMPACT_CHECKS = [
+    ("goal section", r"## Goal[\s\S]*?Objective:"),
+    ("done criteria", r"Done when:"),
+    ("file boundaries", r"## Files[\s\S]*?Must not edit:"),
+    ("checkpoint table", r"## Checkpoints[\s\S]*?\|"),
+    ("runtime section", r"## Runtime"),
+    ("progress file path", r"agent-handoffs/[^`\s]+-progress\.md"),
+    ("status board file path", r"agent-handoffs/[^`\s]+-status\.md"),
+    ("verification evidence file path", r"agent-handoffs/[^`\s]+-verification\.md"),
+    ("policy", r"(active\s+`?/goal`?|Policy:)"),
+    ("hard stops", r"## Hard Stops[\s\S]*(destructive|credential|secret|verification)"),
+    ("review gates", r"## Review Gates[\s\S]*(completion_verifier|integration_reviewer)"),
+]
 
-def validate(path: Path) -> list[str]:
+
+def validate(path: Path, profile: str = "full") -> list[str]:
     text = path.read_text(encoding="utf-8", errors="replace")
     failures = []
-    for label, pattern in CHECKS:
+    checks = COMPACT_CHECKS if profile == "compact" else CHECKS
+    for label, pattern in checks:
         if not re.search(pattern, text, re.IGNORECASE):
             failures.append(label)
     return failures
@@ -41,6 +56,7 @@ def validate(path: Path) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate a plan-goal-runner execution package contract.")
+    parser.add_argument("--profile", choices=("full", "compact"), default="full", help="Validation profile")
     parser.add_argument("path", help="Path to agent-handoffs/<slug>-execution-package.md")
     args = parser.parse_args()
     path = Path(args.path)
@@ -48,7 +64,7 @@ def main() -> int:
         print(f"FAIL: file not found: {path}", file=sys.stderr)
         return 2
 
-    failures = validate(path)
+    failures = validate(path, args.profile)
     if failures:
         print("FAIL: execution package is missing required contract items:")
         for item in failures:

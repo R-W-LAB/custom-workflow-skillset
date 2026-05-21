@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Custom Workflow Skillset",
     "shortDescription": "Long-goal planning and verification harness for Codex",
-    "longDescription": "Adds skills and lifecycle hooks for design stress testing, documentation-aware domain grilling, requirements clarification, approval-free Codex /goal execution, Superpowers process-skill routing with autonomy override, execution package validation, Codex-readable live status boards, bounded parallel lanes, progress logs, verification evidence, and reviewer gates.",
+    "longDescription": "Adds token-quiet skills and lifecycle hooks for design grilling, requirements clarification, native /goal execution packages, bounded subagents, status boards, verification evidence, and reviewer gates.",
     "developerName": "Local Codex User",
     "category": "Coding",
     "websiteURL": "https://github.com/R-W-LAB/custom-workflow-skillset",

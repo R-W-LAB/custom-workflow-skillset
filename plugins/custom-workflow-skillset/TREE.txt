@@ -1,6 +1,7 @@
 .claude-plugin/plugin.json
 .codex-plugin/plugin.json
 AGENTS.md
+MANIFEST.sha256
 README.md
 TREE.txt
 agents/api_reviewer.toml
@@ -20,6 +21,7 @@ agents/test_engineer.toml
 agents/verification_runner.toml
 assets/harness.svg
 docs/codex-config-features-excerpt.toml
+docs/codex-config-token-efficient.toml
 hooks/hooks.json
 scripts/_hook_utils.py
 scripts/package_clean_zip.py
@@ -34,6 +36,7 @@ scripts/test_deep_interview_contract.py
 scripts/user_prompt_submit_goal_classifier.py
 scripts/validate_execution_package.py
 scripts/watch_status.py
+skills/_shared/references/choice-assisted-question.md
 skills/deep-interview/SKILL.md
 skills/deep-interview/templates/requirements-handoff.md
 skills/design-grill-with-docs/SKILL.md
@@ -47,5 +50,7 @@ skills/plan-goal-runner/SKILL.md
 skills/plan-goal-runner/references/superpowers-routing.md
 skills/plan-goal-runner/scripts/status_board.py
 skills/plan-goal-runner/scripts/validate_execution_package.py
+skills/plan-goal-runner/templates/execution-package.compact.md
 skills/plan-goal-runner/templates/execution-package.md
+skills/plan-goal-runner/templates/status-board.compact.md
 skills/plan-goal-runner/templates/status-board.md

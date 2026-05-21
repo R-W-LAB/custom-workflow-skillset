@@ -46,32 +46,11 @@ Write the design handoff first. Move to requirements clarification or goal setup
 
 ## Choice-Assisted Question Format
 
-### Plan mode adapter
+Use `../_shared/references/choice-assisted-question.md` as the shared contract.
 
-If `request_user_input` is available, use it instead of Markdown options for choice-assisted grill questions:
+Plan mode adapter: if `request_user_input` is available, ask exactly one question with 2-3 options and record the answer. Do not include an `Other` option manually.
 
-- Ask exactly one question per call.
-- Provide 2-3 mutually exclusive options.
-- Put the recommended option first and suffix its label with `(Recommended)`.
-- Keep option labels to 1-5 words and descriptions to one short sentence about impact or tradeoff.
-- Do not include an `Other` option manually; the Plan mode client adds a free-form Other path automatically.
-- After the user answers, normalize the selected or free-form answer into the Decision Log.
-
-### Markdown fallback
-
-Use this format when `request_user_input` is unavailable:
-
-```md
-Question <n>: <one design decision question>
-
-Recommended options:
-A. <option> — <short tradeoff>
-B. <option> — <short tradeoff>
-C. <option> — <short tradeoff, optional>
-D. Other / custom answer — describe what you want instead.
-
-My default recommendation: <A/B/C> because <one-line reason>.
-```
+Markdown fallback: use the shared fallback format when `request_user_input` is unavailable.
 
 ## Readiness Gate
 

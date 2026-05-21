@@ -91,10 +91,8 @@ def main() -> None:
     save_state(state_file, state)
 
     reason = (
-        "A long-goal progress log has a recent, clear next checkpoint or an approval/review wait that is covered by Superpowers Autonomy Override, and no stop boundary was detected. "
-        "If this was a Superpowers approval/review/continue prompt, auto-resolve it in the progress log as: Auto-resolved under active /goal: <gate> -> <decision and evidence>. "
-        "Continue the next checkpoint, append progress/evidence, and keep going under the active /goal until DONE, PARTIAL, or BLOCKED. "
-        "Stop only for hard destructive commands, payment/purchase actions, credential or secret exfiltration, explicit user-forbidden actions, or repeated verification failure."
+        "CWS active goal has a fresh next checkpoint and no hard stop. Continue, update progress/evidence, "
+        "and stop only at DONE/PARTIAL/BLOCKED or a hard-stop condition."
     )
     print(json.dumps({"decision": "block", "reason": reason}))
 

@@ -52,39 +52,11 @@ Write the requirements handoff first. Move to planning or goal setup only after 
 
 ## Choice-Assisted Question Format
 
-### Plan mode adapter
+Use `../_shared/references/choice-assisted-question.md` as the shared contract.
 
-If `request_user_input` is available, use it instead of Markdown options for choice-assisted interview questions:
+Plan mode adapter: if `request_user_input` is available, ask exactly one question with 2-3 options and record the answer. Do not include an `Other` option manually.
 
-- Ask exactly one question per call.
-- Provide 2-3 mutually exclusive options.
-- Put the recommended option first and suffix its label with `(Recommended)`.
-- Keep option labels to 1-5 words and descriptions to one short sentence about impact or tradeoff.
-- Do not include an `Other` option manually; the Plan mode client adds a free-form Other path automatically.
-- After the user answers, normalize the selected or free-form answer into the Decision Log.
-
-### Markdown fallback
-
-Use this format when `request_user_input` is unavailable:
-
-```md
-Question <n>: <one clear decision question>
-
-Recommended options:
-A. <option> — <short tradeoff>
-B. <option> — <short tradeoff>
-C. <option> — <short tradeoff, optional>
-D. Other / custom answer — describe what you want instead.
-
-My default recommendation: <A/B/C> because <one-line reason>.
-```
-
-Rules:
-- Prefer 2 options when the decision is simple; use 3 only when there are genuinely distinct paths.
-- Keep the question answerable in one message.
-- If the user answers with a letter, record the selected meaning, not just the letter.
-- If the user mixes options, normalize it into a concrete requirement and confirm only if the mix creates ambiguity.
-- Avoid turning every interview into a quiz: use open-ended questions when options would bias the user or hide an important unknown.
+Markdown fallback: use the shared fallback format when `request_user_input` is unavailable.
 
 ## Readiness Gate
 

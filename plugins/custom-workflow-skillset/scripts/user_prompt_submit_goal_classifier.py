@@ -9,7 +9,15 @@ CRITERIA = [
     r"\b(refactor|migration|schema|public api|cli|auth|permissions?|pii|billing|data integrity)\b",
     r"\b(multiple files|many files|components?|workflows?|acceptance criteria|verification commands?)\b",
     r"\b(plan|implementation order|rollback|compatibility|release safety|subagents?|parallel)\b",
-    r"\b(build|implement|fix|add|rewrite|modernize|orchestrate)\b",
+]
+
+STRONG_GOAL_SIGNALS = [
+    r"\$plan[- ]?goal[- ]?runner\b",
+    r"\b/goal\b",
+    r"\blong[- ]?(goal|running)\b",
+    r"\bexecution package\b",
+    r"\bprogress log\b",
+    r"\bcheckpoint[- ]?by[- ]?checkpoint\b",
 ]
 
 DEEP_INTERVIEW_PATTERNS = [
@@ -50,13 +58,14 @@ def main() -> None:
     if any(re.search(pattern, prompt, re.IGNORECASE) for pattern in DESIGN_GRILL_PATTERNS):
         return
 
+    has_strong_signal = any(re.search(pattern, prompt, re.IGNORECASE) for pattern in STRONG_GOAL_SIGNALS)
     score = sum(1 for pattern in CRITERIA if re.search(pattern, prompt, re.IGNORECASE))
-    if score < 2:
+    if score < 3 and not (has_strong_signal and score >= 2):
         return
 
     emit_context(
         "UserPromptSubmit",
-        "This prompt appears to meet serious-plan criteria. Consider using `$plan-goal-runner` and native `/goal` if the task has a verifiable end state. If the Superpowers plugin is available, actively route to the relevant `Superpowers:*` skill: test-driven-development for behavior changes, systematic-debugging for failures, verification-before-completion before done, writing-plans for granular plans, and subagent-driven-development only for safe independent lanes. Under an active `/goal`, apply Superpowers Autonomy Override: convert Superpowers approval/review/continue prompts into progress/evidence checkpoints and keep working unless a narrow hard-stop condition is reached. Treat this as a suggestion, not a mandate; keep surgical edits stock and simple.",
+        "Serious-plan signal detected. Consider `$plan-goal-runner` and native `/goal`; keep routine surgical edits outside the long-goal harness.",
     )
 
 

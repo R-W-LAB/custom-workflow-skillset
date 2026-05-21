@@ -50,20 +50,16 @@ without new evidence.
 
 ## Execution Package Requirement
 
-Every serious execution package should include:
+Compact packages should include only the lazy-load summary:
 
 ```md
-## Superpowers Skill Routing
-- Available: yes | no | unknown
-- Required before implementation:
-  - `Superpowers:test-driven-development` for behavior changes, or reason skipped:
-  - `Superpowers:systematic-debugging` for failures, or reason not applicable:
-- Required before done:
-  - `Superpowers:verification-before-completion`
-- Conditional:
-  - `Superpowers:using-git-worktrees` if isolation is needed:
-  - `Superpowers:subagent-driven-development` / `Superpowers:dispatching-parallel-agents` if lanes are independent:
-  - `Superpowers:requesting-code-review` for major or merge-bound work:
+## Superpowers
+Available: yes | no | unknown
+Use lazily:
+- TDD if behavior changes
+- systematic-debugging if failures
+- verification-before-completion before done
+- parallel/worktree skills only if lanes or isolation are clear
 
 ## Superpowers Autonomy Override
 - Active when native `/goal` is active or autonomous execution was requested.
@@ -71,3 +67,6 @@ Every serious execution package should include:
 - Record: `Auto-resolved under active /goal: <gate> -> <decision and evidence>.`
 - Ask the user only for narrow hard-stop conditions.
 ```
+
+Full packages may expand this into a routing table when the method choice itself
+is a material risk.

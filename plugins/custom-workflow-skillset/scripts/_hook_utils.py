@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import datetime as _dt
+import hashlib
 import json
 import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -137,6 +139,75 @@ def snippet(text: str, limit: int = 1800) -> str:
     if len(clean) <= limit:
         return clean
     return clean[:limit] + "\n...[truncated]"
+
+
+def env_flag(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, "").strip())
+    except ValueError:
+        return default
+
+
+def token_profile() -> str:
+    value = os.environ.get("CWS_TOKEN_PROFILE") or os.environ.get("CUSTOM_WORKFLOW_TOKEN_PROFILE") or "minimal"
+    value = value.strip().lower()
+    return value if value in {"minimal", "standard", "full"} else "minimal"
+
+
+def include_context_tails() -> bool:
+    return token_profile() in {"standard", "full"}
+
+
+def include_tool_output_context() -> bool:
+    return token_profile() == "full"
+
+
+def hook_state_dir() -> Path:
+    root = os.environ.get("CWS_HOOK_STATE_DIR")
+    path = Path(root) if root else Path(tempfile.gettempdir()) / "custom-workflow-skillset-hooks"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def state_file(name: str) -> Path:
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", name).strip("-") or "state"
+    return hook_state_dir() / f"{safe}.json"
+
+
+def load_state(name: str) -> dict:
+    try:
+        data = json.loads(state_file(name).read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def save_state(name: str, data: dict) -> None:
+    try:
+        state_file(name).write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def fingerprint(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()
+
+
+def first_fingerprint(name: str, key: str, value: str) -> bool:
+    state = load_state(name)
+    digest = fingerprint(value)
+    if state.get(key) == digest:
+        return False
+    state[key] = digest
+    save_state(name, state)
+    return True
 
 
 def now_iso() -> str:
