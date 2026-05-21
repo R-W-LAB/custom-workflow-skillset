@@ -30,6 +30,7 @@ SHARED_QUESTION = ROOT / "skills" / "_shared" / "references" / "choice-assisted-
 TOKEN_CONFIG = ROOT / "docs" / "codex-config-token-efficient.toml"
 CODEX_PLUGIN_JSON = ROOT / ".codex-plugin" / "plugin.json"
 CLAUDE_PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
+HOOKS_JSON = ROOT / "hooks" / "hooks.json"
 CLAUDE_MARKETPLACE_JSON = REPO_ROOT / ".claude-plugin" / "marketplace.json"
 CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "test.yml"
 
@@ -541,14 +542,28 @@ integration_reviewer if multi-component: conditional
         claude = json.loads(CLAUDE_PLUGIN_JSON.read_text(encoding="utf-8"))
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-        self.assertEqual(codex["version"], "0.3.14")
+        self.assertEqual(codex["version"], "0.3.15")
         self.assertEqual(claude["version"], codex["version"])
-        self.assertIn("Current version: `0.3.14`", readme)
+        self.assertIn("Current version: `0.3.15`", readme)
         if CLAUDE_MARKETPLACE_JSON.exists():
             marketplace = json.loads(CLAUDE_MARKETPLACE_JSON.read_text(encoding="utf-8"))["plugins"][0]
             self.assertEqual(marketplace["version"], codex["version"])
         elif (REPO_ROOT / ".git").exists():
             self.fail("Claude marketplace manifest is missing from the repository root")
+
+    def test_hook_commands_use_portable_marketplace_paths(self) -> None:
+        hooks = json.loads(HOOKS_JSON.read_text(encoding="utf-8"))["hooks"]
+        expected_prefix = 'python3 "$HOME/.codex/.tmp/marketplaces/custom-workflow-skillset/plugins/custom-workflow-skillset/scripts/'
+
+        for event_entries in hooks.values():
+            for entry in event_entries:
+                for hook in entry["hooks"]:
+                    command = hook["command"]
+                    with self.subTest(command=command):
+                        self.assertTrue(command.startswith(expected_prefix))
+                        self.assertTrue(command.endswith('.py"'))
+                        self.assertNotIn("./scripts/", command)
+                        self.assertNotIn("/Users/", command)
 
     def test_ci_workflow_runs_plugin_contract_checks(self) -> None:
         if not CI_WORKFLOW.exists():
