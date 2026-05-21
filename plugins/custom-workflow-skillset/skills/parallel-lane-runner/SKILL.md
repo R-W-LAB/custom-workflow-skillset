@@ -9,7 +9,7 @@ Use this skill only after `plan-goal-runner` produced an execution package with 
 
 For long `/goal` work, parallelism is a support tool, not the default implementation strategy. The root `/goal` runner owns overall execution and integration.
 
-If the Superpowers plugin is available, use `Superpowers:dispatching-parallel-agents` to sanity-check independent-task suitability and `Superpowers:subagent-driven-development` for fresh-subagent discipline. Keep Custom Workflow's lane registry, file ownership, and root integration rules as the controlling contract.
+If the Superpowers plugin is available, keep it lazy: use `Superpowers:dispatching-parallel-agents` or `Superpowers:subagent-driven-development` only when lane suitability is unclear, a lane is failing or drifting, or method discipline affects correctness. Keep Custom Workflow's lane registry, file ownership, and root integration rules as the controlling contract.
 
 ## Purpose
 
@@ -50,7 +50,7 @@ Run bounded in-session parallel work with Codex native subagents while avoiding 
 
 1. Read `agent-handoffs/<slug>-execution-package.md`.
 2. Confirm the verdict is `PARALLEL_SAFE` or `PARALLEL_SAFE_WITH_LIMITS`.
-3. If available, route through `Superpowers:dispatching-parallel-agents` or `Superpowers:subagent-driven-development` for method discipline without changing file ownership.
+3. If suitability is unclear or a lane is already drifting/failing, route through `Superpowers:dispatching-parallel-agents` or `Superpowers:subagent-driven-development` without changing file ownership.
 4. Group lanes by dependency:
    - preflight sequential gates
    - parallel read-only evidence lanes

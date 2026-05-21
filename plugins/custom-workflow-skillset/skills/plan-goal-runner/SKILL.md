@@ -35,11 +35,11 @@ If requirements are still materially unclear, use `deep-interview` first and wri
 1. Read the request, repo guidance, and any requirements handoff.
 2. Derive inline requirements when no handoff exists: outcome, scope, non-goals, assumptions, acceptance criteria, and verification ideas.
 3. Use `repo_explorer` for brownfield facts unless the change is clearly small.
-4. Decide Superpowers routing lazily. Record availability and needed skill names; read `references/superpowers-routing.md` only when method details affect the work.
+4. Decide Superpowers routing lazily. Record availability and needed skill names; read `references/superpowers-routing.md` only when method details affect the work. If Superpowers is available, `verification-before-completion` is required at the final done/commit/PR gate.
 5. Draft a scoped execution package from `templates/execution-package.compact.md` by default. Use `templates/execution-package.md` only for high-risk full plans.
 6. Classify parallelism: default to `SEQUENTIAL_RECOMMENDED` unless independent lanes are already clear. Call `parallel_planner` only for likely parallel lanes or explicit user parallelism.
 7. Prefer root-owned sequential implementation. Use subagents primarily for bounded evidence/review; use implementation lanes only with explicit disjoint files or separate worktrees.
-8. Run `plan_critic` for serious plans. Run `plan_architect` first only for architecture boundary changes, public API/schema/auth/migration risk, multi-component coupling, rollback/compatibility risk, or if `plan_critic` returns `NEEDS_REVISION`.
+8. Run `plan_critic` for every serious plan. Run `plan_architect` first for architecture boundary changes, public API/schema/auth/migration risk, three or more components, multi-component coupling, unclear rollback/compatibility, or if `plan_critic` returns `NEEDS_REVISION`.
 9. Validate the package:
    `python3 <this-skill>/scripts/validate_execution_package.py --profile compact agent-handoffs/<slug>-execution-package.md`
 10. Initialize `agent-handoffs/<slug>-status.md` with `templates/status-board.md` or:
@@ -61,7 +61,7 @@ The execution package template includes a self-contained policy summary for gene
 Compact package:
 - `Goal`, `Files`, `Checkpoints`, `Runtime`, `Hard Stops`, and `Review Gates`.
 - `Runtime` names progress/status/evidence paths and the active `/goal` policy.
-- `Superpowers` may be a short lazy-load list.
+- `Superpowers` may be a short lazy-load list, with `verification-before-completion` marked required before done when available.
 
 Full package:
 - Use only when high-risk details need explicit long-form policy text.
@@ -95,13 +95,13 @@ Adaptive reasoning:
 
 Core:
 - `repo_explorer` before planning brownfield work unless the change is clearly small.
-- `plan_critic` before finalizing a serious package.
+- `plan_critic` before finalizing every serious package.
 - `completion_verifier` before done.
-- `integration_reviewer` only for multi-component, multi-lane, or cross-contract changes.
+- `integration_reviewer` for any multi-component, multi-lane, or cross-contract change.
 
 Conditional:
 - `requirements_analyst` for weak requirements.
-- `plan_architect` for architecture/API/schema/auth/migration, compatibility, rollback, or coupling risk.
+- `plan_architect` for architecture/API/schema/auth/migration, three or more components, unclear rollback/compatibility, or coupling risk.
 - `parallel_planner` only when independent lanes are likely or explicitly requested.
 - `verification_runner` for command evidence without source edits.
 - `test_engineer`, `security_reviewer`, `api_reviewer`, `performance_reviewer`, `external_researcher` when their domain affects correctness.

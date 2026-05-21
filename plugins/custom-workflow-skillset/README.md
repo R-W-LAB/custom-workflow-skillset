@@ -5,7 +5,7 @@ approval-free to a verifiable goal while preserving explicit requirements,
 native `/goal` runtime discipline, checkpointed progress, command evidence, and
 bounded subagent review.
 
-Current version: `0.3.12`
+Current version: `0.3.13`
 
 ## Included
 
@@ -190,7 +190,7 @@ This workflow is intentionally opt-in and heavyweight:
 - `deep-interview` for ambiguous implementation requirements and requirement handoff generation.
 - `plan-goal-runner` for serious implementation planning, review gate, and native `/goal` command generation.
 - `parallel-lane-runner` only for independent bounded lanes with low conflict risk.
-- When Superpowers is installed, this plugin records a lazy routing list and loads `Superpowers:*` skills only when their method detail affects the current checkpoint.
+- When Superpowers is installed, this plugin records a lazy routing list and loads `Superpowers:*` skills only when their method detail affects the current checkpoint; `verification-before-completion` remains required before done when available.
 - Custom agents are intended mostly for review, repo exploration, verification, and bounded specialist checks rather than replacing Codex's native implementation loop.
 - Lifecycle hooks provide context hints, evidence capture, and hard destructive-command guards. They do not replace `/goal`, progress logs, or reviewer gates.
 
@@ -283,8 +283,9 @@ switches to the newest `*-status.md`.
 Custom Workflow is the outer long-goal runtime. Superpowers is a method library.
 When both are available, serious execution packages record only availability
 and the needed skill names by default. Load the full Superpowers skill only when
-method detail is needed for TDD, debugging, verification-before-completion,
-parallel suitability, or skill-authoring work.
+method detail is needed for TDD, debugging, parallel suitability, or
+skill-authoring work. If available, `Superpowers:verification-before-completion`
+is required at the final done/commit/PR gate.
 
 Lazy routing triggers:
 
@@ -356,12 +357,12 @@ clear request
   -> execution package
   -> parallelization verdict
   -> plan_critic
-  -> plan_architect only for architecture/API/schema/auth/migration/coupling risk or critic revision
+  -> plan_architect for architecture/API/schema/auth/migration, 3+ components, unclear rollback/compatibility, coupling risk, or critic revision
   -> exact /goal command
   -> root /goal checkpoint loop
   -> verification_runner evidence
   -> completion_verifier
-  -> integration_reviewer only for multi-component/multi-lane/cross-contract work
+  -> integration_reviewer for multi-component/multi-lane/cross-contract work
   -> DONE / PARTIAL / BLOCKED
 ```
 

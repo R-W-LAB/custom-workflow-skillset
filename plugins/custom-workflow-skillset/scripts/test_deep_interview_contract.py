@@ -502,9 +502,9 @@ integration_reviewer if multi-component: conditional
         claude = json.loads(CLAUDE_PLUGIN_JSON.read_text(encoding="utf-8"))
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-        self.assertEqual(codex["version"], "0.3.12")
+        self.assertEqual(codex["version"], "0.3.13")
         self.assertEqual(claude["version"], codex["version"])
-        self.assertIn("Current version: `0.3.12`", readme)
+        self.assertIn("Current version: `0.3.13`", readme)
         if CLAUDE_MARKETPLACE_JSON.exists():
             marketplace = json.loads(CLAUDE_MARKETPLACE_JSON.read_text(encoding="utf-8"))["plugins"][0]
             self.assertEqual(marketplace["version"], codex["version"])
@@ -582,6 +582,21 @@ integration_reviewer if multi-component: conditional
 
         self.assertLessEqual(len(skill_words), 1200)
         self.assertLessEqual(len(template_words), 650)
+
+    def test_quality_gates_keep_balanced_review_policy(self) -> None:
+        skill = PLAN_GOAL_SKILL.read_text(encoding="utf-8")
+        compact = (ROOT / "skills" / "plan-goal-runner" / "templates" / "execution-package.compact.md").read_text(encoding="utf-8")
+        parallel = (ROOT / "skills" / "parallel-lane-runner" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("Run `plan_critic` for every serious plan", skill)
+        self.assertIn("three or more components", skill)
+        self.assertIn("unclear rollback/compatibility", skill)
+        self.assertIn("`completion_verifier` before done", skill)
+        self.assertIn("`integration_reviewer` for any multi-component", skill)
+        self.assertIn("`verification-before-completion` is required", skill)
+        self.assertIn("plan_architect if 3+ components", compact)
+        self.assertIn("completion_verifier: required before done", compact)
+        self.assertIn("keep it lazy", parallel)
 
 
 if __name__ == "__main__":

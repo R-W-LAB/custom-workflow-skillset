@@ -19,6 +19,7 @@ Progress: `agent-handoffs/<slug>-progress.md`
 Status: `agent-handoffs/<slug>-status.md`
 Evidence: `agent-handoffs/<slug>-verification.md`
 Policy: active `/goal`; continue goal-scoped actions; stop only for hard-stop conditions.
+Superpowers: lazy; `verification-before-completion` before done when available.
 
 ## Hard Stops
 - destructive command
@@ -28,5 +29,7 @@ Policy: active `/goal`; continue goal-scoped actions; stop only for hard-stop co
 - repeated verification failure without new evidence
 
 ## Review Gates
-completion_verifier:
+plan_critic: required for serious plan
+plan_architect if 3+ components, unclear rollback/compatibility, API/schema/auth/migration, or coupling risk:
+completion_verifier: required before done
 integration_reviewer if multi-component:

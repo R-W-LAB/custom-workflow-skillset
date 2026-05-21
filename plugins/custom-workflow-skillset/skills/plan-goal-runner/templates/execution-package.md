@@ -91,7 +91,7 @@ Finalization:
 1. Run full verification commands.
 2. Use `verification_runner` for command evidence when useful.
 3. Run `completion_verifier`.
-4. Run `integration_reviewer` for multi-component or multi-lane work.
+4. Run `integration_reviewer` for multi-component, multi-lane, or cross-contract work.
 5. Set status to DONE, PARTIAL, or BLOCKED.
 
 ## Parallelization Decision
@@ -117,5 +117,7 @@ Dependencies:
 ## Rollback / Stop Conditions
 
 ## Reviewer Notes
-- Architect:
-- Critic:
+- plan_critic: required for serious plan
+- plan_architect: required for architecture/API/schema/auth/migration, 3+ components, unclear rollback/compatibility, or coupling risk
+- completion_verifier: required before done
+- integration_reviewer: required for multi-component, multi-lane, or cross-contract work
